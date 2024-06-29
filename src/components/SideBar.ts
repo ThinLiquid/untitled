@@ -13,6 +13,10 @@ export default class SideBar {
     return this
   }
 
+  toggle (): void {
+    this.element.class('hide')
+  }
+
   render (): HTML {
     return this.element
   }

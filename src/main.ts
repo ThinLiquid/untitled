@@ -14,6 +14,9 @@ import {
 
 import { v4 as uuid } from 'uuid'
 
+import Settings from './pages/Settings'
+import Keybinds from './pages/Keybinds'
+
 import TabContainer from './components/TabContainer'
 import SideBar from './components/SideBar'
 import SideBarButton from './components/SideBarButton'
@@ -41,6 +44,32 @@ const scripts = ['/baremux/bare.cjs', '/epoxy/index.js', '/uv/uv.bundle.js', '/u
 
 let activeTabIndex = -1
 
+const closeTabAtIndex = (tab: {
+  iframe: HTML
+  button: HTML
+  id: string
+}): void => {
+  const index = iframes.findIndex(iframe => iframe.id === tab.id)
+  if (iframes.length > 1) {
+    tab.button.cleanup()
+    tab.iframe.cleanup()
+    if (index === activeTabIndex) {
+      if (index === iframes.length - 1) {
+        focusIframe(index - 1)
+      } else if (index === 0) {
+        focusIframe(index + 1)
+      } else {
+        focusIframe(index)
+      }
+    }
+    iframes.splice(index, 1)
+    return
+  }
+  try {
+    focusIframe(-1)
+  } catch (err) {}
+}
+
 const handleKeybind = (e: KeyboardEvent): void => {
   if (e.key === 'ArrowUp' && (e.ctrlKey || e.metaKey)) {
     e.preventDefault()
@@ -60,9 +89,27 @@ const handleKeybind = (e: KeyboardEvent): void => {
     ;(getActiveTab().contentWindow as Window).history.forward()
   } else if (e.key === 'r' && (e.ctrlKey || e.metaKey)) {
     e.preventDefault()
+    if ((getActiveTab().contentWindow as Window).location.href.startsWith('about:')) {
+      handleBuiltInPage(getActiveTab())
+      return
+    }
     ;(getActiveTab().contentWindow as Window).location.reload()
   } else if (e.key === 'ArrowUp' && e.altKey) {
+    e.preventDefault()
     input.focus()
+    input.select()
+  } else if (e.key === 'ArrowLeft' && e.altKey) {
+    e.preventDefault()
+    sidebar.toggle()
+  } else if (e.key === 'ArrowDown' && e.altKey) {
+    e.preventDefault()
+    getActiveTab().focus()
+  } else if (e.key === 't' && e.ctrlKey && e.altKey) {
+    e.preventDefault()
+    createNewTab()
+  } else if (e.key === 'w' && e.ctrlKey && e.altKey) {
+    e.preventDefault()
+    closeTabAtIndex(iframes[activeTabIndex])
   }
 }
 
@@ -79,18 +126,45 @@ for (const script of scripts) {
   await loadScript(script)
 }
 
+const builtInPages: {
+  [key: string]: {
+    icon: string
+    page: (body: HTMLBodyElement) => void
+  }
+} = {
+  'about:blank?settings': {
+    icon: 'settings',
+    page: Settings
+  },
+  'about:blank?keybinds': {
+    icon: 'keyboard',
+    page: Keybinds
+  }
+}
+
+const handleBuiltInPage = (iframe: HTMLIFrameElement): void => {
+  const url = getIFrameWindow(iframe).location.href as keyof typeof builtInPages
+  if (builtInPages[url] != null) {
+    builtInPages[url].page(iframe.contentDocument?.body as HTMLBodyElement)
+  }
+}
+
 const handleIFrameLoad = (currentIndex: number): void => {
   const { iframe, button } = iframes[currentIndex]
   const _ = getIFrameWindow(iframe)
 
   _.addEventListener('keydown', handleKeybind)
 
-  const url = window.__uv$config.decodeUrl(_.location.href.split(window.__uv$config.prefix)[1])
+  const url = window.__uv$config.decodeUrl(_.location.href.split(window.__uv$config.prefix)[1]) ?? _.location.href
 
-  button
-    .html('')
-    .append(getFavicon(new URL(url).hostname))
-    .attr({ title: _.document.querySelector('title')?.textContent ?? 'Untitled' })
+  console.log(window.__uv$config.decodeUrl(_.location.href.split(window.__uv$config.prefix)[1]))
+
+  button.html('')
+  button.attr({ title: _.document.querySelector('title')?.textContent ?? 'Untitled' })
+  if (url.startsWith('about:')) {
+    button.append(Icon(builtInPages[url]?.icon))
+    handleBuiltInPage(iframe.elm as HTMLIFrameElement)
+  } else button.append(new HTML('img').attr({ src: getFavicon(url) }))
 
   if (activeTabIndex === currentIndex) {
     input.val(url)
@@ -105,29 +179,25 @@ const createNewTab = (url: string = 'https://google.com'): void => {
     },
     (e: MouseEvent) => {
       e.preventDefault()
-      iframes.splice(iframes.findIndex(iframe => iframe.id === id), 1)
-      button.cleanup()
-      iframe.cleanup()
-      if (iframes.length > 1) {
-        if (activeTabIndex === currentIndex) {
-          focusIframe(0)
-        }
-      } else if (activeTabIndex === currentIndex) {
-        try {
-          focusIframe(-1)
-        } catch (err) {}
-      }
+      closeTabAtIndex(iframes.find(iframe => iframe.id === id) ?? { iframe: new HTML('iframe'), button: new HTML('button'), id })
     },
-    Icon('globe')
+    url.startsWith('about:') ? Icon(builtInPages[url]?.icon) : new HTML('img').attr({ src: getFavicon(url) })
   ).render()
   tabsContainer.add(button)
 
-  const iframe = new IFrame(window.__uv$config.prefix + window.__uv$config.encodeUrl(url), () => handleIFrameLoad(currentIndex))
+  const currentIndex = iframes.length
+
+  const iframe = new IFrame(url.startsWith('about:') ? url : window.__uv$config.prefix + window.__uv$config.encodeUrl(url), () => {
+    handleIFrameLoad(currentIndex)
+  })
     .render()
 
-  const currentIndex = iframes.length
   iframeContainer.add(iframe)
   iframes.push({ iframe, button, id })
+
+  if (url.startsWith('about:')) {
+    handleBuiltInPage(iframe.elm as HTMLIFrameElement)
+  }
 
   focusIframe(currentIndex)
   getActiveTab().contentWindow?.addEventListener('keydown', handleKeybind)
@@ -137,19 +207,24 @@ const focusIframe = (index: number): void => {
   if (index === -1) {
     input.val('')
   }
+  iframes.forEach((iframe, i) => {
+    if (i !== index) {
+      iframe.iframe.styleJs({ display: 'none' })
+      iframe.button.classOff('active')
+    }
+  })
   if (activeTabIndex !== -1) {
     iframes[activeTabIndex].iframe.styleJs({ display: 'none' })
     iframes[activeTabIndex].button.classOff('active')
   }
+
   iframes[index].iframe.styleJs({ display: 'block' })
   iframes[index].button.classOn('active')
   activeTabIndex = index
+
+  const url = getIFrameWindow(getActiveTab()).location.href
   input.val(
-    window.__uv$config.decodeUrl(
-      iframes[index].iframe.elm
-        .getAttribute('src')
-        ?.split(window.__uv$config.prefix)[1] ?? ''
-    )
+    url.startsWith(window.__uv$config.prefix) ? window.__uv$config.decodeUrl(url.split(window.__uv$config.prefix)[1]) : url
   )
 }
 
@@ -161,17 +236,40 @@ const topbar = new HTML('div').class('topbar').appendTo(body)
 const container = new HTML('div').class('container').appendTo(body)
 
 const multiButton = new MultiButtonContainer()
-  .add(new MultiButton('arrow_back', () => getIFrameWindow(getActiveTab()).history.back()).render())
-  .add(new MultiButton('arrow_forward', () => getIFrameWindow(getActiveTab()).history.forward()).render())
-  .add(new MultiButton('refresh', () => getIFrameWindow(getActiveTab()).location.reload()).render())
+  .add(new MultiButton('arrow_back', () => {
+    getIFrameWindow(getActiveTab()).history.back()
+    if ((getActiveTab().contentWindow as Window).location.href.startsWith('about:')) {
+      handleBuiltInPage(getActiveTab())
+    }
+  }).render())
+  .add(new MultiButton('arrow_forward', () => {
+    getIFrameWindow(getActiveTab()).history.forward()
+    if ((getActiveTab().contentWindow as Window).location.href.startsWith('about:')) {
+      handleBuiltInPage(getActiveTab())
+    }
+  }).render())
+  .add(new MultiButton('refresh', () => {
+    if ((getActiveTab().contentWindow as Window).location.href.startsWith('about:')) {
+      handleBuiltInPage(getActiveTab())
+      return
+    }
+    ;(getActiveTab().contentWindow as Window).location.reload()
+  }).render())
 
 multiButton.render().appendTo(topbar)
 
 const input = new InputBar('Search or type URL', (value: string) => {
+  const _search = search(value, 'https://google.com/search?q=%s')
+  if (!_search.startsWith('about:')) getIFrameWindow(getActiveTab()).location.href = _search
+
   if (activeTabIndex === -1) {
-    createNewTab(value)
+    createNewTab(_search)
   } else {
-    getIFrameWindow(getActiveTab()).location.href = search(value, 'https://google.com/search?q=%s')
+    if (getIFrameWindow(getActiveTab()).location.href.startsWith('about:')) {
+      getActiveTab().src = _search
+      return
+    }
+    getIFrameWindow(getActiveTab()).location.href = _search
   }
   getIFrameWindow(getActiveTab()).focus()
 })
@@ -182,9 +280,11 @@ const tabsContainer = new TabContainer()
 const sidebar = new SideBar()
   .add(new SideBarButton(() => createNewTab(), undefined, Icon('add')).render())
   .add(tabsContainer.render())
-  .add(new SideBarButton(() => {}, undefined, Icon('settings')).render())
+  .add(new SideBarButton(() => createNewTab('about:blank?settings'), undefined, Icon('settings')).render())
 
 const iframeContainer = new IFrameContainer()
 
 sidebar.render().appendTo(container)
 iframeContainer.render().appendTo(container)
+
+createNewTab('about:blank?keybinds')

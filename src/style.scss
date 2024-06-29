@@ -2,6 +2,7 @@
   font-family: "Overused Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
   color: var(--text);
   box-sizing: border-box;
+  user-select: none;
 }
 
 body, html {
@@ -85,6 +86,13 @@ body, html {
   gap: 10px;
   width: 42.9px;
   height: calc(100vh - 60px);
+  transition: width 0.2s, margin-left 0.2s;
+
+  &.hide {
+    width: 0;
+    overflow: hidden;
+    margin-left: -10px;
+  }
 
   .box {
     display: flex;
@@ -177,19 +185,6 @@ input.side {
     top: 0;
     left: 0;
 
-    background: white;
-
     z-index: 11;
-  }
-
-  &::before {
-    position: absolute;
-    content: "welcome to untitled. \a\a Ctrl+↑ - Select previous tab \a Ctrl+↓ - Select next tab \a\a Ctrl+← - Go back \a Ctrl+→ - Go forward \a Ctrl+R - Refresh the iFrame \a\a Alt+↑ - Focus the searchbar";
-    white-space: pre;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: var(--text);
-    opacity: 0.75;
   }
 }

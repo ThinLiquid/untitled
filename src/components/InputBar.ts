@@ -24,6 +24,11 @@ export default class InputBar {
     return this
   }
 
+  select (): InputBar {
+    (this.element.elm as HTMLInputElement).select()
+    return this
+  }
+
   render (): HTML {
     return this.element
   }

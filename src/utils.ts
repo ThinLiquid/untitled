@@ -19,10 +19,11 @@ export const registerServiceWorker = async (): Promise<void> => {
 }
 
 export const applyTheme = (): void => {
-  const theme = (localStorage.getItem('theme') ?? 'black,#cdd6f4').split(',')
+  const theme = (localStorage.getItem('theme') ?? 'black|||#cdd6f4').split('|||')
   if (theme != null) {
-    document.documentElement.style.setProperty('--main', theme[0])
-    document.documentElement.style.setProperty('--text', theme[1])
+    document.body.style.setProperty('--main', theme[0])
+    document.body.style.setProperty('--text', theme[1])
+    document.dispatchEvent(new Event('themechange'))
   }
 }
 
@@ -36,15 +37,36 @@ export const search = (input: string, template: string): string => {
     if (url.hostname.includes('.')) return url.toString()
   } catch (err) {}
 
-  return template.replace('%s', encodeURIComponent(input))
+  if (input.startsWith('about:')) return input
+
+  return window.__uv$config.prefix + window.__uv$config.encodeUrl(template.replace('%s', encodeURIComponent(input)))
 }
 
 export const Icon = (name: string): HTML => new HTML('i')
   .class('material-symbols-rounded')
   .text(name)
 
-export const getFavicon = (url: string): string => `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}`
+export const getFavicon = (url: string): string => {
+  if (url == null) return ''
+  return `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}`
+}
 export const getIFrameWindow = (iframe: HTML | HTMLIFrameElement): Window => {
   if (iframe instanceof HTML) return (iframe.elm as HTMLIFrameElement).contentWindow as Window
   return iframe.contentWindow as Window
+}
+
+export const Page = (body: HTMLElement): HTML => {
+  const _container = document.createElement('div')
+  body.appendChild(_container)
+  const container = new HTML(_container)
+
+  container.elm.style.setProperty('--text', document.body.style.getPropertyValue('--text'))
+  container.elm.style.setProperty('--main', document.body.style.getPropertyValue('--main'))
+
+  document.addEventListener('themechange', () => {
+    container.elm.style.setProperty('--text', document.body.style.getPropertyValue('--text'))
+    container.elm.style.setProperty('--main', document.body.style.getPropertyValue('--main'))
+  })
+
+  return container
 }
