@@ -84,20 +84,17 @@ body, html {
   flex-direction: column;
   gap: 10px;
   width: 42.9px;
-  height: calc(100vh - 70px);
-
-  & > *:first-child {
-    min-height: 40px;
-  }
+  height: calc(100vh - 60px);
 
   .box {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    overflow-y: scroll;
+    overflow-y: auto;
     overflow-x: hidden;
     border-radius: 15px;
     flex: 1;
+    padding-bottom: 10px;
+    gap: 10px;
 
     & > * {
       animation: appear .5s forwards;
