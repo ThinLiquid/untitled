@@ -1,0 +1,26 @@
+{
+  "name": "untitled",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "ts-standard": "^12.0.2",
+    "typescript": "^5.2.2",
+    "vite": "^5.0.8",
+    "vite-plugin-static-copy": "^1.0.5"
+  },
+  "dependencies": {
+    "@datkat21/html": "^1.2.0",
+    "@mercuryworkshop/bare-mux": "^1.1.1",
+    "@mercuryworkshop/epoxy-transport": "^2.0.1",
+    "@titaniumnetwork-dev/ultraviolet": "^3.1.2",
+    "material-symbols": "^0.20.0",
+    "sass": "^1.77.6",
+    "uuid": "^10.0.0"
+  }
+}
