@@ -1,5 +1,4 @@
 import HTML from '@datkat21/html'
-import { SetTransport } from '@mercuryworkshop/bare-mux'
 
 export const loadScript = async (src: string): Promise<void> => await new Promise((resolve, reject) => {
   const script = document.createElement('script')
@@ -16,7 +15,7 @@ export const registerServiceWorker = async (): Promise<void> => {
 
   await navigator.serviceWorker.register('uv/sw.js')
 
-  await SetTransport('EpxMod.EpoxyClient', { wisp: 'wss://wisp.mercurywork.shop' })
+  await window.BareMux.SetTransport('EpxMod.EpoxyClient', { wisp: 'wss://wisp.mercurywork.shop' })
 }
 
 export const applyTheme = (): void => {

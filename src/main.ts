@@ -30,11 +30,14 @@ declare global {
       encodeUrl: (url: string) => string
       decodeUrl: (url: string) => string
     }
+    BareMux: {
+      SetTransport: (name: string, config: any) => Promise<void>
+    }
   }
 }
 
 const body = new HTML(document.body)
-const scripts = ['/epoxy/index.js', '/uv/uv.bundle.js', '/uv/uv.config.js']
+const scripts = ['/baremux/bare.cjs', '/epoxy/index.js', '/uv/uv.bundle.js', '/uv/uv.config.js']
 
 let activeTabIndex = -1
 

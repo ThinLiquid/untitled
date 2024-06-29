@@ -5,6 +5,7 @@ import { viteStaticCopy } from 'vite-plugin-static-copy'
 
 import { uvPath } from '@titaniumnetwork-dev/ultraviolet'
 import { epoxyPath } from '@mercuryworkshop/epoxy-transport'
+import { baremuxPath } from '@mercuryworkshop/bare-mux'
 
 export default defineConfig({
   plugins: [
@@ -18,6 +19,11 @@ export default defineConfig({
         {
           src: `${epoxyPath}/**/*`.replace(/\\/g, '/'),
           dest: 'epoxy',
+          overwrite: false
+        },
+        {
+          src: `${baremuxPath}/**/*`.replace(/\\/g, '/'),
+          dest: 'baremux',
           overwrite: false
         }
       ]
