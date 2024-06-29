@@ -173,6 +173,7 @@ const input = new InputBar('Search or type URL', (value: string) => {
   } else {
     getIFrameWindow(getActiveTab()).location.href = search(value, 'https://google.com/search?q=%s')
   }
+  getIFrameWindow(getActiveTab()).focus()
 })
 
 input.render().appendTo(topbar)
