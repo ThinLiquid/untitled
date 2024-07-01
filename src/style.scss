@@ -1,190 +1,69 @@
-* {
-  font-family: "Overused Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
-  color: var(--text);
-  box-sizing: border-box;
-  user-select: none;
-}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 body, html {
   margin: 0;
   padding: 0;
-  background: var(--main);
-
-  display: flex;
-  gap: 10px;
-  padding: 5px;
-  flex-direction: column;
-
-  height: 100%;
   width: 100%;
-  overflow: hidden;
+  height: 100%;
 }
 
-.side, .mini-side {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 15px;
-  cursor: pointer;
-  width: 40px;
-  border: none;
+* {
+  font-family: Inter, sans-serif;
+  box-sizing: border-box;
+  user-select: none;
+}
 
-  aspect-ratio: 1/1;
+.sidenav {
+  width: 225px;
+  transition: width 0.75s cubic-bezier(0.85, 0, 0.15, 1), opacity 0.75s cubic-bezier(0.85, 0, 0.15, 1), margin-left 0.75s cubic-bezier(0.85, 0, 0.15, 1);
+}
 
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.sidenav.hide {
+  width: 0!important;
+  opacity: 0;
+  overflow: hidden;
+  margin-left: -8px;
+}
 
-  .material-symbols-rounded {
-    font-size: 24px!important;
+.toolbar-input::placeholder {
+  color: rgba(255,255,255,0.27)!important;
+  opacity: 1;
+}
+
+.tab {
+  transition: background 0.1s ease;
+
+  &.new * {
+    color: rgba(255,255,255,0.4)!important
   }
 
+  .icon {
+    opacity: 0;
+    transition: opacity 0.1s ease, color 0.1s ease, background 0.1s ease;
 
-  transition: background 0.2s;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+    &:active {
+      color: white;
+    }
 
-  &:hover {
-    background: rgba(255, 255, 255, 0.1);
+    &:disabled {
+      color: rgba(255,255,255,0.2);
+    }
+
+    &:hover {
+      color: white;
+      background: rgba(255,255,255,0.15);
+    }
   }
 
   &.active {
-    background: rgba(255, 255, 255, 0.2);
-  }
-}
-
-.mini-side {
-  flex: 1;
-  height: unset;
-
-  &:not( :nth-last-child(1) ), &:not( :nth-child(1) ){
-    border-radius: 0;
+    background: rgba(255,255,255,0.28)!important;
   }
 
-  &:nth-last-child(1) {
-    border-radius: 0 7.5px 7.5px 0;
-    border-left: none;
-  }
+  &:hover {
+    background: rgba(255,255,255,0.15)!important;
 
-  &:nth-child(1) {
-    border-radius: 7.5px 0 0 7.5px;
-    border-right: none;
-  }
-
-  .material-symbols-rounded {
-    font-size: 20px!important;
-  }
-}
-
-.mini-container {
-  display: flex;
-  gap: 0;
-  width: 90px!important;
-  margin-right: 2.5px;
-}
-
-.sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  width: 42.9px;
-  height: calc(100vh - 60px);
-  transition: width 0.2s, margin-left 0.2s;
-
-  &.hide {
-    width: 0;
-    overflow: hidden;
-    margin-left: -10px;
-  }
-
-  .box {
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-    overflow-x: hidden;
-    border-radius: 15px;
-    flex: 1;
-    padding-bottom: 10px;
-    gap: 10px;
-
-    & > * {
-      animation: appear .5s forwards;
+    & .icon {
+      opacity: 1;
     }
-
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-
-    &::-webkit-scrollbar {
-      display: none;
-    }
-  }
-}
-
-@keyframes appear {
-  from {
-    opacity: 0;
-    scale: 2;
-  }
-  to {
-    opacity: 1;
-    scale: 1;
-    min-height: 40px;
-  }
-
-}
-
-@font-face {
-  font-family: "Overused Grotesk";
-  src:
-    url("../fonts/OverusedGrotesk-VF.woff2") format("woff2 supports variations"),
-    url("../fonts/OverusedGrotesk-VF.woff2") format("woff2-variations");
-  font-weight: 300 900;
-}
-
-.container {
-  display: flex;
-  gap: 10px;
-  flex: 1;
-}
-
-.topbar {
-  display: flex;
-  height: min-content;
-  gap: 7.5px;
-
-  .mini-side {
-    height: 30px;
-  }
-}
-
-input.side {
-  width: 100%;
-  aspect-ratio: unset;
-  padding: 5px 7.5px;
-  border-radius: 7.5px;
-}
-
-*:focus {
-  outline: 1px solid var(--text);
-  outline-offset: -1px;
-}
-
-.iframe-container {
-  position: relative;
-  flex: 1;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 15px;
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.075);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  overflow: hidden;
-
-  iframe {
-    height: 100%;
-    width: 100%;
-  
-    border: none;
-  
-    position: absolute;
-    top: 0;
-    left: 0;
-
-    z-index: 11;
   }
 }

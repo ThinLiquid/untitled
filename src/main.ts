@@ -1,31 +1,17 @@
+/* eslint-disable no-new */
+
 import 'material-symbols'
 import './style.scss'
 
-import HTML from '@datkat21/html'
+import HTML from './html'
 import {
-  Icon,
-  applyTheme,
-  getFavicon,
-  getIFrameWindow,
   loadScript,
-  registerServiceWorker,
-  search
+  registerServiceWorker
 } from './utils'
 
-import { v4 as uuid } from 'uuid'
-
-import Settings from './pages/Settings'
-import Keybinds from './pages/Keybinds'
-
-import TabContainer from './components/TabContainer'
-import SideBar from './components/SideBar'
-import SideBarButton from './components/SideBarButton'
-import IFrameContainer from './components/IFrameContainer'
-import IFrame from './components/IFrame'
-import MultiButton from './components/MultiButton'
-import MultiButtonContainer from './components/MultiButtonContainer'
-import InputBar from './components/InputBar'
-
+import Toolbar, { ToolbarIcon, ToolbarIconGroup, ToolbarInvisibleDivider, ToolbarInput, ToolbarSpacer } from './components/Toolbar'
+import { TabIcon, TabImage, TabImageIcon, TabLabel } from './components/Tab'
+import NewTab from './pages/NewTab'
 declare global {
   interface Window {
     __uv$config: {
@@ -36,255 +22,354 @@ declare global {
     BareMux: {
       SetTransport: (name: string, config: any) => Promise<void>
     }
+    searchEngine: string
   }
 }
 
 const body = new HTML(document.body)
 const scripts = ['/baremux/bare.cjs', '/epoxy/index.js', '/uv/uv.bundle.js', '/uv/uv.config.js']
 
-let activeTabIndex = -1
-
-const closeTabAtIndex = (tab: {
-  iframe: HTML
-  button: HTML
-  id: string
-}): void => {
-  const index = iframes.findIndex(iframe => iframe.id === tab.id)
-  if (iframes.length > 1) {
-    tab.button.cleanup()
-    tab.iframe.cleanup()
-    if (index === activeTabIndex) {
-      if (index === iframes.length - 1) {
-        focusIframe(index - 1)
-      } else if (index === 0) {
-        focusIframe(index + 1)
-      } else {
-        focusIframe(index)
-      }
-    }
-    iframes.splice(index, 1)
-    return
+const ctrlKeybinds: {
+  [key: string]: () => void
+} = {
+  s: () => {
+    sidenav.class('hide')
+  },
+  t: () => {
+    new Tab('untitled://newtab')
   }
-  try {
-    focusIframe(-1)
-  } catch (err) {}
 }
+
+window.searchEngine = 'https://google.com/search?q=%s'
 
 const handleKeybind = (e: KeyboardEvent): void => {
-  if (e.key === 'ArrowUp' && (e.ctrlKey || e.metaKey)) {
+  if (e.key in ctrlKeybinds && e.ctrlKey) {
     e.preventDefault()
-    if (activeTabIndex !== -1 && activeTabIndex > 0) {
-      focusIframe(activeTabIndex - 1)
-    }
-  } else if (e.key === 'ArrowDown' && (e.ctrlKey || e.metaKey)) {
-    e.preventDefault()
-    if (activeTabIndex !== -1 && activeTabIndex < iframes.length - 1) {
-      focusIframe(activeTabIndex + 1)
-    }
-  } else if (e.key === 'ArrowLeft' && (e.ctrlKey || e.metaKey)) {
-    e.preventDefault()
-    ;(getActiveTab().contentWindow as Window).history.back()
-  } else if (e.key === 'ArrowRight' && (e.ctrlKey || e.metaKey)) {
-    e.preventDefault()
-    ;(getActiveTab().contentWindow as Window).history.forward()
-  } else if (e.key === 'r' && (e.ctrlKey || e.metaKey)) {
-    e.preventDefault()
-    if ((getActiveTab().contentWindow as Window).location.href.startsWith('about:')) {
-      handleBuiltInPage(getActiveTab())
-      return
-    }
-    ;(getActiveTab().contentWindow as Window).location.reload()
-  } else if (e.key === 'ArrowUp' && e.altKey) {
-    e.preventDefault()
-    input.focus()
-    input.select()
-  } else if (e.key === 'ArrowLeft' && e.altKey) {
-    e.preventDefault()
-    sidebar.toggle()
-  } else if (e.key === 'ArrowDown' && e.altKey) {
-    e.preventDefault()
-    getActiveTab().focus()
-  } else if (e.key === 't' && e.ctrlKey && e.altKey) {
-    e.preventDefault()
-    createNewTab()
-  } else if (e.key === 'w' && e.ctrlKey && e.altKey) {
-    e.preventDefault()
-    closeTabAtIndex(iframes[activeTabIndex])
+    ctrlKeybinds[e.key]()
   }
 }
-
-const iframes: Array<{
-  iframe: HTML
-  button: HTML
-  id: string
-}> = []
-
-applyTheme()
-window.addEventListener('keydown', handleKeybind)
 
 for (const script of scripts) {
   await loadScript(script)
 }
 
-const builtInPages: {
-  [key: string]: {
-    icon: string
-    page: (body: HTMLBodyElement) => void
-  }
-} = {
-  'about:blank?settings': {
-    icon: 'settings',
-    page: Settings
-  },
-  'about:blank?keybinds': {
-    icon: 'keyboard',
-    page: Keybinds
-  }
-}
-
-const handleBuiltInPage = (iframe: HTMLIFrameElement): void => {
-  const url = getIFrameWindow(iframe).location.href as keyof typeof builtInPages
-  if (builtInPages[url] != null) {
-    builtInPages[url].page(iframe.contentDocument?.body as HTMLBodyElement)
-  }
-}
-
-const handleIFrameLoad = (currentIndex: number): void => {
-  const { iframe, button } = iframes[currentIndex]
-  const _ = getIFrameWindow(iframe)
-
-  _.addEventListener('keydown', handleKeybind)
-
-  const url = window.__uv$config.decodeUrl(_.location.href.split(window.__uv$config.prefix)[1]) ?? _.location.href
-
-  console.log(window.__uv$config.decodeUrl(_.location.href.split(window.__uv$config.prefix)[1]))
-
-  button.html('')
-  button.attr({ title: _.document.querySelector('title')?.textContent ?? 'Untitled' })
-  if (url.startsWith('about:')) {
-    button.append(Icon(builtInPages[url]?.icon))
-    handleBuiltInPage(iframe.elm as HTMLIFrameElement)
-  } else button.append(new HTML('img').attr({ src: getFavicon(url) }))
-
-  if (activeTabIndex === currentIndex) {
-    input.val(url)
-  }
-}
-
-const createNewTab = (url: string = 'https://google.com'): void => {
-  const id = uuid()
-  const button = new SideBarButton(
-    () => {
-      focusIframe(iframes.findIndex(iframe => iframe.id === id))
-    },
-    (e: MouseEvent) => {
-      e.preventDefault()
-      closeTabAtIndex(iframes.find(iframe => iframe.id === id) ?? { iframe: new HTML('iframe'), button: new HTML('button'), id })
-    },
-    url.startsWith('about:') ? Icon(builtInPages[url]?.icon) : new HTML('img').attr({ src: getFavicon(url) })
-  ).render()
-  tabsContainer.add(button)
-
-  const currentIndex = iframes.length
-
-  const iframe = new IFrame(url.startsWith('about:') ? url : window.__uv$config.prefix + window.__uv$config.encodeUrl(url), () => {
-    handleIFrameLoad(currentIndex)
-  })
-    .render()
-
-  iframeContainer.add(iframe)
-  iframes.push({ iframe, button, id })
-
-  if (url.startsWith('about:')) {
-    handleBuiltInPage(iframe.elm as HTMLIFrameElement)
-  }
-
-  focusIframe(currentIndex)
-  getActiveTab().contentWindow?.addEventListener('keydown', handleKeybind)
-}
-
-const focusIframe = (index: number): void => {
-  if (index === -1) {
-    input.val('')
-  }
-  iframes.forEach((iframe, i) => {
-    if (i !== index) {
-      iframe.iframe.styleJs({ display: 'none' })
-      iframe.button.classOff('active')
-    }
-  })
-  if (activeTabIndex !== -1) {
-    iframes[activeTabIndex].iframe.styleJs({ display: 'none' })
-    iframes[activeTabIndex].button.classOff('active')
-  }
-
-  iframes[index].iframe.styleJs({ display: 'block' })
-  iframes[index].button.classOn('active')
-  activeTabIndex = index
-
-  const url = getIFrameWindow(getActiveTab()).location.href
-  input.val(
-    url.startsWith(window.__uv$config.prefix) ? window.__uv$config.decodeUrl(url.split(window.__uv$config.prefix)[1]) : url
-  )
-}
-
-const getActiveTab = (): HTMLIFrameElement => iframes[activeTabIndex].iframe.elm as HTMLIFrameElement
-
 await registerServiceWorker()
 
-const topbar = new HTML('div').class('topbar').appendTo(body)
-const container = new HTML('div').class('container').appendTo(body)
-
-const multiButton = new MultiButtonContainer()
-  .add(new MultiButton('arrow_back', () => {
-    getIFrameWindow(getActiveTab()).history.back()
-    if ((getActiveTab().contentWindow as Window).location.href.startsWith('about:')) {
-      handleBuiltInPage(getActiveTab())
-    }
-  }).render())
-  .add(new MultiButton('arrow_forward', () => {
-    getIFrameWindow(getActiveTab()).history.forward()
-    if ((getActiveTab().contentWindow as Window).location.href.startsWith('about:')) {
-      handleBuiltInPage(getActiveTab())
-    }
-  }).render())
-  .add(new MultiButton('refresh', () => {
-    if ((getActiveTab().contentWindow as Window).location.href.startsWith('about:')) {
-      handleBuiltInPage(getActiveTab())
-      return
-    }
-    ;(getActiveTab().contentWindow as Window).location.reload()
-  }).render())
-
-multiButton.render().appendTo(topbar)
-
-const input = new InputBar('Search or type URL', (value: string) => {
-  const _search = search(value, 'https://google.com/search?q=%s')
-  if (!_search.startsWith('about:')) getIFrameWindow(getActiveTab()).location.href = _search
-
-  if (activeTabIndex === -1) {
-    createNewTab(_search)
-  } else {
-    if (getIFrameWindow(getActiveTab()).location.href.startsWith('about:')) {
-      getActiveTab().src = _search
-      return
-    }
-    getIFrameWindow(getActiveTab()).location.href = _search
-  }
-  getIFrameWindow(getActiveTab()).focus()
+body.styleJs({
+  display: 'flex',
+  flexDirection: 'column',
+  background: 'linear-gradient(90deg, #2A2C46, #6A445D)'
 })
 
-input.render().appendTo(topbar)
+/* TOOLBAR */
 
-const tabsContainer = new TabContainer()
-const sidebar = new SideBar()
-  .add(new SideBarButton(() => createNewTab(), undefined, Icon('add')).render())
-  .add(tabsContainer.render())
-  .add(new SideBarButton(() => createNewTab('about:blank?settings'), undefined, Icon('settings')).render())
+const toggleToolbarButton = ToolbarIcon('view_sidebar', 'Toggle Sidebar (Ctrl+S)')
+  .on('click', () => sidenav.class('hide'))
 
-const iframeContainer = new IFrameContainer()
+const navigationButtons = ToolbarIconGroup(
+  ToolbarIcon('arrow_back', 'Click to go back'),
+  ToolbarIcon('arrow_forward', 'Click to go forward')
+)
 
-sidebar.render().appendTo(container)
-iframeContainer.render().appendTo(container)
+const refreshButton = ToolbarIcon('refresh', 'Reload (Ctrl+R)')
 
-createNewTab('about:blank?keybinds')
+const addTabButton = ToolbarIcon('add', 'Add')
+const extrasGroup = ToolbarIconGroup(
+  addTabButton
+)
+
+const inputbar = ToolbarInput()
+
+const toolbar = Toolbar()
+  .appendMany(
+    toggleToolbarButton,
+    ToolbarInvisibleDivider(),
+    navigationButtons,
+    refreshButton,
+    inputbar,
+    ToolbarSpacer(),
+    extrasGroup
+  )
+
+/* CONTAINER */
+
+const iframeContainer = new HTML('div')
+  .styleJs({
+    flex: '1',
+    boxShadow: '0 2px 4px 0 rgba(0,0,0,0.1), 0 1px 1px 0 rgba(0,0,0,0.6)',
+    borderRadius: '8px',
+    background: 'rgba(255,255,255,0.025)',
+    position: 'relative',
+    zIndex: '2',
+    overflow: 'hidden'
+  })
+
+const newTabButton = new HTML('button')
+  .class('tab')
+  .class('new')
+  .styleJs({
+    width: '225px',
+    height: '40px',
+    display: 'flex',
+    padding: '7px 10px',
+    alignItems: 'center',
+    gap: '10px',
+    borderRadius: '12px',
+    background: 'transparent',
+    border: 'none'
+  })
+  .appendMany(
+    TabImageIcon('add'),
+    TabLabel('New Tab'),
+    TabLabel('Ctrl+T')
+      .style({ flex: 'unset' })
+  )
+
+const sidenav = new HTML('div')
+  .class('sidenav')
+  .class('hide')
+  .styleJs({
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '5px',
+    marginRight: '8px'
+  })
+  .append(newTabButton)
+
+const container = new HTML('div')
+  .styleJs({
+    display: 'flex',
+    flex: '1',
+    padding: '8px',
+    paddingTop: '0'
+  })
+  .appendMany(
+    sidenav,
+    iframeContainer
+  )
+
+body.appendMany(
+  toolbar,
+  container
+)
+
+/* Even Handlers */
+
+const tabs: Tab[] = []
+
+class IFrame {
+  element: HTML
+
+  constructor () {
+    this.element = new HTML('iframe')
+      .styleJs({
+        background: 'white',
+        position: 'absolute',
+        top: '0',
+        left: '0',
+        right: '0',
+        bottom: '0',
+        border: 'none',
+        height: '100%',
+        width: '100%',
+        display: 'none'
+      })
+  }
+
+  getSource (): string | null {
+    return this.element.elm.getAttribute('src')
+  }
+
+  setSource (url: string): this {
+    this.element.attr({ src: url })
+    return this
+  }
+
+  getWindow (): Window {
+    return (this.element.elm as HTMLIFrameElement).contentWindow as Window
+  }
+
+  getDocument (): Document {
+    return (this.element.elm as HTMLIFrameElement).contentDocument as Document
+  }
+
+  on (event: string, callback: () => any): this {
+    this.element.on(event, callback)
+    return this
+  }
+
+  style (styles: Partial<CSSStyleDeclaration>): this {
+    this.element.styleJs(styles as any)
+    return this
+  }
+
+  appendTo (elm: HTML): this {
+    this.element.appendTo(elm)
+    return this
+  }
+}
+class Tab {
+  id = window.crypto.randomUUID()
+
+  sidenavLabel: HTML
+  sidenavCloseButton: HTML
+  sidenavImageContainer: HTML
+  sidenavButton: HTML
+
+  iframe: IFrame
+
+  untitledDomain: string
+
+  constructor (url: string) {
+    tabs.push(this)
+
+    this.untitledDomain = url.split('://')[0] === 'untitled' ? url.split('://')[1] : ''
+
+    this.sidenavLabel = TabLabel('New Tab')
+    this.sidenavCloseButton = TabIcon('close')
+    this.sidenavImageContainer = new HTML('div')
+      .append(
+        TabImageIcon('globe')
+      )
+      .styleJs({
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      })
+
+    this.sidenavButton = new HTML('button')
+      .class('tab')
+      .styleJs({
+        width: '225px',
+        height: '40px',
+        display: 'flex',
+        padding: '7px 10px',
+        alignItems: 'center',
+        gap: '10px',
+        borderRadius: '12px',
+        background: 'transparent',
+        border: 'none'
+      })
+      .appendMany(
+        this.sidenavImageContainer,
+        this.sidenavLabel,
+        this.sidenavCloseButton
+      )
+
+    this.iframe = new IFrame()
+      .setSource(this.handleUrlChange(url))
+
+    this.iframe.appendTo(iframeContainer)
+    this.sidenavButton.appendTo(sidenav)
+
+    this.focus()
+
+    this.sidenavButton.on('click', () => this.focus())
+    if (navigator.userAgent.includes('Chrome') && this.untitledDomain !== '') {
+      this.handleIframeLoad().catch(console.error)
+    }
+    this.iframe.on('load', this.handleIframeLoad.bind(this))
+  }
+
+  pages = {
+    newtab: {
+      icon: 'search',
+      title: 'New Tab',
+      page: NewTab
+    },
+    blank: {
+      icon: 'globe',
+      title: 'Untitled',
+      page: () => {}
+    }
+  }
+
+  private async handleIframeLoad (): Promise<void> {
+    this.iframe.getWindow().addEventListener('keydown', handleKeybind)
+    this.untitledDomain = this.iframe.getWindow().location.href.startsWith('about:blank') ? this.untitledDomain : ''
+    const { title } = this.iframe.getDocument()
+    if (this.untitledDomain === '') {
+      this.setTitle(title === '' ? 'Untitled' : title)
+    } else {
+      this.setTitle(this.pages[this.untitledDomain as keyof typeof this.pages]?.title ?? this.untitledDomain.split('.')[0])
+    }
+
+    const { location } = this.iframe.getWindow()
+    const url = this.getRawUrl(window.__uv$config.decodeUrl(location.href.split(window.__uv$config.prefix)[1]) ?? location.href)
+    console.log(url)
+
+    if (url.startsWith('https')) {
+      inputbar.qs('i')?.text('lock')
+    } else if (url.startsWith('http')) {
+      inputbar.qs('i')?.text('lock_open')
+    } else if (url.startsWith('untitled')) {
+      inputbar.qs('i')?.text('insert_drive_file')
+    }
+    inputbar.qs('input')?.val(this.untitledDomain === '' ? new URL(url).hostname : new URL(url).href)
+
+    if (this.untitledDomain !== '') {
+      this.sidenavImageContainer.clear()
+        .append(
+          TabImageIcon(this.pages[this.untitledDomain as keyof typeof this.pages]?.icon ?? 'globe')
+        )
+    } else {
+      const icon = `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}`
+      if (icon != null) {
+        this.sidenavImageContainer.clear()
+          .append(
+            TabImage(icon)
+          )
+      }
+    }
+
+    if (this.untitledDomain !== '') {
+      await this.loadPage()
+    }
+  }
+
+  private async loadPage (): Promise<void> {
+    await this.pages[this.untitledDomain as keyof typeof this.pages ?? 'blank'].page(this.iframe.getDocument().body)
+  }
+
+  private getRawUrl (url: string): string {
+    const isProxied = url.split(window.__uv$config.prefix)[1] != null
+
+    return isProxied ? window.__uv$config.decodeUrl(url.split(window.__uv$config.prefix)[1]) : url.startsWith('about:blank') ? `untitled://${this.untitledDomain}` : url
+  }
+
+  unfocus (): void {
+    this.iframe.style({ display: 'none' })
+    this.sidenavButton.classOff('active')
+  }
+
+  focus (): void {
+    for (const tab of tabs) {
+      tab.unfocus()
+    }
+    this.iframe.style({ display: 'block' })
+    this.sidenavButton.classOn('active')
+  }
+
+  setTitle (title: string): void {
+    this.sidenavLabel.text(title)
+  }
+
+  private handleUrlChange (url: string): string {
+    if (url.startsWith('untitled://')) {
+      return 'about:blank'
+    } else if (url.startsWith('http://') || url.startsWith('https://')) {
+      return window.__uv$config.prefix + window.__uv$config.encodeUrl(url)
+    } else if (url === '') {
+      return window.__uv$config.prefix + window.__uv$config.encodeUrl(`https://${url}`)
+    } else {
+      return url
+    }
+  }
+}
+
+window.addEventListener('keydown', handleKeybind)
+newTabButton.on('click', () => { new Tab('untitled://newtab') })
+addTabButton.on('click', () => { new Tab('untitled://newtab') })
+
+new Tab('untitled://newtab')
