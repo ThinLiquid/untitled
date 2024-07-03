@@ -10,4 +10,4 @@ npm i && npm run build
 - [ ] make `untitled://shortcuts`
 - [ ] make `untitled://theme`
 - [ ] optimize ui for mobile devices
-- [ ] deploy on github pages
+- [x] deploy on github pages
