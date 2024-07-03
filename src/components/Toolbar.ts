@@ -1,5 +1,6 @@
 import HTML from '../html'
 import Icon from './Icon'
+import OmniTool from './OmniTool'
 
 export const ToolbarIcon = (icon: string, alt: string): HTML => Icon(icon, 20)
   .attr({
@@ -58,7 +59,8 @@ export const ToolbarInput = (): HTML => new HTML('div')
         outline: 'none',
         textAlign: 'center',
         fontSize: '13px',
-        lineHeight: '14px'
+        lineHeight: '14px',
+        pointerEvents: 'none'
       })
       .class('toolbar-input')
       .attr({
@@ -68,12 +70,17 @@ export const ToolbarInput = (): HTML => new HTML('div')
       .styleJs({
         color: 'rgba(255,255,255,0.7)'
       })
-      .on('click', () => {
+      .on('click', (e) => {
+        e.stopPropagation()
         const input = document.querySelector('.toolbar-input') as HTMLInputElement
         input.select()
         document.execCommand('copy')
       })
   )
+  .on('click', (e) => {
+    e.stopPropagation()
+    new OmniTool('current')
+  })
 
 export default (): HTML => new HTML('div')
   .styleJs({
