@@ -1,4 +1,4 @@
-/* eslint-disable no-new */
+/* eslint-disable no-new, @typescript-eslint/no-this-alias */
 
 import 'material-symbols'
 import './style.scss'
@@ -35,6 +35,26 @@ const ctrlKeybinds: {
   s: () => {
     sidenav.class('hide')
   },
+  r: () => {
+    currentTab.iframe.getWindow().location.reload()
+  }
+}
+
+const altKeybinds: {
+  [key: string]: () => void
+} = {
+  ArrowUp: () => {
+    inputbar.qs('input')?.elm.focus()
+  },
+  ArrowDown: () => {
+    currentTab.iframe.getWindow().focus()
+  },
+  ArrowLeft: () => {
+    currentTab.iframe.getWindow().history.back()
+  },
+  ArrowRight: () => {
+    currentTab.iframe.getWindow().history.forward()
+  },
   t: () => {
     new Tab('untitled://newtab')
   }
@@ -46,6 +66,9 @@ const handleKeybind = (e: KeyboardEvent): void => {
   if (e.key in ctrlKeybinds && e.ctrlKey) {
     e.preventDefault()
     ctrlKeybinds[e.key]()
+  } else if (e.key in altKeybinds && e.altKey) {
+    e.preventDefault()
+    altKeybinds[e.key]()
   }
 }
 
@@ -67,13 +90,22 @@ const toggleToolbarButton = ToolbarIcon('view_sidebar', 'Toggle Sidebar (Ctrl+S)
   .on('click', () => sidenav.class('hide'))
 
 const navigationButtons = ToolbarIconGroup(
-  ToolbarIcon('arrow_back', 'Click to go back'),
-  ToolbarIcon('arrow_forward', 'Click to go forward')
+  ToolbarIcon('arrow_back', 'Go back (Alt+ArrowLeft)')
+    .on('click', () => {
+      currentTab.iframe.getWindow().history.back()
+    }),
+  ToolbarIcon('arrow_forward', 'Go forward (Alt+ArrowRight)')
+    .on('click', () => {
+      currentTab.iframe.getWindow().history.forward()
+    })
 )
 
 const refreshButton = ToolbarIcon('refresh', 'Reload (Ctrl+R)')
+  .on('click', () => {
+    currentTab.iframe.getWindow().location.reload()
+  })
 
-const addTabButton = ToolbarIcon('add', 'Add')
+const addTabButton = ToolbarIcon('add', 'New Tab (Alt+T)')
 const extrasGroup = ToolbarIconGroup(
   addTabButton
 )
@@ -121,7 +153,7 @@ const newTabButton = new HTML('button')
   .appendMany(
     TabImageIcon('add'),
     TabLabel('New Tab'),
-    TabLabel('Ctrl+T')
+    TabLabel('Alt+T')
       .style({ flex: 'unset' })
   )
 
@@ -209,6 +241,9 @@ class IFrame {
     return this
   }
 }
+
+let currentTab: Tab
+
 class Tab {
   id = window.crypto.randomUUID()
 
@@ -228,6 +263,10 @@ class Tab {
 
     this.sidenavLabel = TabLabel('New Tab')
     this.sidenavCloseButton = TabIcon('close')
+      .on('click', (e) => {
+        e.stopPropagation()
+        this.close()
+      })
     this.sidenavImageContainer = new HTML('div')
       .append(
         TabImageIcon('globe')
@@ -285,6 +324,17 @@ class Tab {
     }
   }
 
+  close (): void {
+    const index = tabs.findIndex((tab) => tab.id === this.id)
+    tabs.splice(index, 1)
+    this.iframe.element.elm.remove()
+    this.sidenavButton.elm.remove()
+    if (currentTab.id === this.id) {
+      currentTab = tabs[index - 1] ?? tabs[0]
+    }
+    currentTab.focus()
+  }
+
   private async handleIframeLoad (): Promise<void> {
     this.iframe.getWindow().addEventListener('keydown', handleKeybind)
     this.untitledDomain = this.iframe.getWindow().location.href.startsWith('about:blank') ? this.untitledDomain : ''
@@ -308,12 +358,7 @@ class Tab {
     }
     inputbar.qs('input')?.val(this.untitledDomain === '' ? new URL(url).hostname : new URL(url).href)
 
-    if (this.untitledDomain !== '') {
-      this.sidenavImageContainer.clear()
-        .append(
-          TabImageIcon(this.pages[this.untitledDomain as keyof typeof this.pages]?.icon ?? 'globe')
-        )
-    } else {
+    if (this.untitledDomain === '') {
       const icon = `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}`
       if (icon != null) {
         this.sidenavImageContainer.clear()
@@ -321,6 +366,11 @@ class Tab {
             TabImage(icon)
           )
       }
+    } else {
+      this.sidenavImageContainer.clear()
+        .append(
+          TabImageIcon(this.pages[this.untitledDomain as keyof typeof this.pages]?.icon ?? 'globe')
+        )
     }
 
     if (this.untitledDomain !== '') {
@@ -345,10 +395,12 @@ class Tab {
 
   focus (): void {
     for (const tab of tabs) {
+      if (tab.id === this.id) continue
       tab.unfocus()
     }
     this.iframe.style({ display: 'block' })
     this.sidenavButton.classOn('active')
+    currentTab = this
   }
 
   setTitle (title: string): void {

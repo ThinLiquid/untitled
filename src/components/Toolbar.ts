@@ -6,7 +6,8 @@ export const ToolbarIcon = (icon: string, alt: string): HTML => Icon(icon, 20)
     title: alt
   })
   .styleJs({
-    color: 'rgba(255,255,255,0.6)'
+    color: 'rgba(255,255,255,0.6)',
+    cursor: 'pointer'
   })
 
 export const ToolbarIconGroup = (...children: HTML[]): HTML => new HTML('div')
@@ -66,6 +67,11 @@ export const ToolbarInput = (): HTML => new HTML('div')
     Icon('link', 14, true)
       .styleJs({
         color: 'rgba(255,255,255,0.7)'
+      })
+      .on('click', () => {
+        const input = document.querySelector('.toolbar-input') as HTMLInputElement
+        input.select()
+        document.execCommand('copy')
       })
   )
 
