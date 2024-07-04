@@ -63,6 +63,7 @@ export default class OmniTool {
                   } else {
                     window.currentTab.iframe.setSource(search((e.target as HTMLInputElement).value, window.searchEngine))
                   }
+                  this.remove()
                   return
                 } else if (e.key === 'Escape') {
                   this.remove()

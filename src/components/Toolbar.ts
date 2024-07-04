@@ -1,3 +1,5 @@
+/* eslint-disable no-new */
+
 import HTML from '../html'
 import Icon from './Icon'
 import OmniTool from './OmniTool'
@@ -70,11 +72,9 @@ export const ToolbarInput = (): HTML => new HTML('div')
       .styleJs({
         color: 'rgba(255,255,255,0.7)'
       })
-      .on('click', (e) => {
+      .on('click', async (e) => {
         e.stopPropagation()
-        const input = document.querySelector('.toolbar-input') as HTMLInputElement
-        input.select()
-        document.execCommand('copy')
+        await navigator.clipboard.writeText(window.currentTab.iframe.getWindow().location.href)
       })
   )
   .on('click', (e) => {
