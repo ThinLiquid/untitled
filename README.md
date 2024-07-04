@@ -9,5 +9,5 @@ npm i && npm run build
 
 - [ ] make `untitled://shortcuts`
 - [ ] make `untitled://theme`
-- [ ] optimize ui for mobile devices
+- [x] optimize ui for mobile devices
 - [x] deploy on github pages
