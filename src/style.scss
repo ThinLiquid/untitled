@@ -165,4 +165,8 @@ body, html {
   body > div:nth-of-type(2) > div:nth-child(2) {
     height: calc(100% - 50px)!important;
   }
+
+  body > div:nth-of-type(3) {
+    width: calc(100% - 15px)!important;
+  }
 }
