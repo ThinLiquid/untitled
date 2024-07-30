@@ -151,14 +151,18 @@ body, html {
     flex-direction: column-reverse!important;
     padding-top: 8px;
   }
-  body > div:nth-child(2) > div:nth-child(5) {
+  body > div:nth-of-type(1) > div:nth-child(5) {
     position: fixed;
     top: -35px!important;
     width: calc(100% - 15px)!important;
     margin-left: 0px;
   }
-  body > div:nth-child(2) {
+  body > div:nth-of-type(1) {
     padding: 10px;
     margin: 0px!important;
+  }
+
+  body > div:nth-of-type(2) > div:nth-child(2) {
+    height: calc(100% - 50px)!important;
   }
 }
