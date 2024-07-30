@@ -149,6 +149,7 @@ body, html {
 @media screen and (max-width: 600px) {
   body {
     flex-direction: column-reverse!important;
+    padding-top: 8px;
   }
   body > div:nth-child(2) > div:nth-child(5) {
     position: fixed;
@@ -159,6 +160,5 @@ body, html {
   body > div:nth-child(2) {
     padding: 10px;
     margin: 0px!important;
-    margin-top: 40px!important;
   }
 }
