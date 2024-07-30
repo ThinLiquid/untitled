@@ -13,6 +13,7 @@ import Toolbar, { ToolbarIcon, ToolbarIconGroup, ToolbarInvisibleDivider, Toolba
 import { TabImageIcon, TabLabel } from './components/Tab'
 import Tab from './others/Tab'
 import OmniTool from './components/OmniTool'
+import { setColor } from './pages/Theme'
 declare global {
   interface Window {
     __uv$config: {
@@ -48,6 +49,8 @@ const ctrlKeybinds: {
     window.currentTab.iframe.getWindow().location.reload()
   }
 }
+
+setColor(window.localStorage.getItem('theme') ?? '#aabbaa')
 
 const altKeybinds: {
   [key: string]: () => void
@@ -98,7 +101,7 @@ await registerServiceWorker()
 body.styleJs({
   display: 'flex',
   flexDirection: 'column',
-  background: 'linear-gradient(90deg, #2A2C46, #6A445D)'
+  background: 'linear-gradient(90deg, var(--theme), var(--theme2))'
 })
 
 /* TOOLBAR */

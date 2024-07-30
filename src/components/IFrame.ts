@@ -1,4 +1,5 @@
 import HTML from '../html'
+import Tab from '../others/Tab'
 
 export default class IFrame {
   element: HTML
@@ -24,7 +25,12 @@ export default class IFrame {
   }
 
   setSource (url: string): this {
-    this.element.attr({ src: url })
+    const _url = Tab.handleUrlChange(url)
+    this.element.attr({
+      src: _url,
+      'data-domain': url.split('://')[1]
+    })
+
     return this
   }
 

@@ -3,7 +3,6 @@ import HTML from '../html'
 import { Page } from '../utils'
 
 const NewTab = async (body: HTMLElement): Promise<void> => {
-  body.style.backgroundColor = '#1e1e2e'
   const container = Page(body)
 
   container.appendMany(

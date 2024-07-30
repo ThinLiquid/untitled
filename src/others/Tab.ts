@@ -2,6 +2,7 @@ import IFrame from '../components/IFrame'
 import { TabLabel, TabIcon, TabImageIcon, TabImage } from '../components/Tab'
 import HTML from '../html'
 import Keybinds from '../pages/Keybinds'
+import Theme from '../pages/Theme'
 import Welcome from '../pages/Welcome'
 
 export default class Tab {
@@ -57,7 +58,7 @@ export default class Tab {
       )
 
     this.iframe = new IFrame()
-      .setSource(this.handleUrlChange(url))
+      .setSource(url)
 
     this.iframe.appendTo(window.iframeContainer)
     this.sidenavButton.appendTo(window.sidenav)
@@ -77,10 +78,15 @@ export default class Tab {
       title: 'Welcome',
       page: Welcome
     },
-    keybinds: {
+    shortcuts: {
       icon: 'keyboard',
-      title: 'Keybinds',
+      title: 'Shortcuts',
       page: Keybinds
+    },
+    theme: {
+      icon: 'palette',
+      title: 'Theme',
+      page: Theme
     },
     blank: {
       icon: 'globe',
@@ -102,7 +108,7 @@ export default class Tab {
 
   private async handleIframeLoad (): Promise<void> {
     this.iframe.getWindow().addEventListener('keydown', window.handleKeybind)
-    this.untitledDomain = this.iframe.getWindow().location.href.startsWith('about:blank') ? this.untitledDomain : ''
+    this.untitledDomain = this.iframe.element.elm.getAttribute('data-domain') ?? ''
     const { title } = this.iframe.getDocument()
     if (this.untitledDomain === '') {
       this.setTitle(title === '' ? 'Untitled' : title)
@@ -112,7 +118,6 @@ export default class Tab {
 
     const { location } = this.iframe.getWindow()
     const url = this.getRawUrl(window.__uv$config.decodeUrl(location.href.split(window.__uv$config.prefix)[1]) ?? location.href)
-    console.log(url)
 
     if (url.startsWith('https')) {
       window.inputbar.qs('i')?.text('lock')
@@ -172,7 +177,7 @@ export default class Tab {
     this.sidenavLabel.text(title)
   }
 
-  private handleUrlChange (url: string): string {
+  static handleUrlChange (url: string): string {
     if (url.startsWith('untitled://')) {
       return 'about:blank'
     } else if (url.startsWith('http://') || url.startsWith('https://')) {

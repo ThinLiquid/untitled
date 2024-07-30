@@ -7,7 +7,7 @@ npm i && npm run build
 ```
 ## todo
 
-- [ ] make `untitled://shortcuts`
-- [ ] make `untitled://theme`
+- [x] make `untitled://shortcuts`
+- [x] make `untitled://theme`
 - [x] optimize ui for mobile devices
 - [x] deploy on github pages
